@@ -1,0 +1,9 @@
+{
+	"name": "donutrap",
+	"authors": [
+		"Cédric Picard"
+	],
+	"description": "Generic honeypot in D",
+	"copyright": "Copyright © 2016, Cédric Picard",
+	"license": "MIT"
+}
