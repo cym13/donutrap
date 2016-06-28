@@ -12,8 +12,8 @@ import tcp;
 import udp;
 import icmp;
 
-import pcap;
-import bpf;
+import libpcap.pcap;
+import libpcap.bpf;
 
 T consume(T)(ref ubyte[] packet) {
     import cerealed.decerealizer;
