@@ -1,5 +1,4 @@
 
-
 /** Allow better default string representation */
 mixin template autoToString() {
     import std.conv:  to;
@@ -41,5 +40,5 @@ unittest {
     }
     S s;
 
-    assert(s.toString = "S(i=0, j=42, c=Y)");
+    assert(s.toString == "S(i=0, j=42, c=Y)");
 }
