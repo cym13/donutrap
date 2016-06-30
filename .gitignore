@@ -5,3 +5,4 @@ __dummy.html
 *.obj
 donutrap
 dub.selections.json
+__test__library__
