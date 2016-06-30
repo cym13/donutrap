@@ -7,16 +7,6 @@ import std.datetime;
 import utils;
 import ip;
 
-auto GMT() {
-    version (Posix)
-        alias TZProvider = PosixTimeZone;
-
-    version (Windows)
-        alias TZProvider = WindowsTimeZone;
-
-    return TZProvider.getTimeZone("Etc/GMT");
-};
-
 /**
  * An attack event
  *
@@ -44,7 +34,7 @@ struct Attack {
         if (_time == SysTime.init)
             _time = Clock.currTime;
 
-        time = _time.toOtherTZ(GMT);
+        time = _time.toUTC;
 
         md5sum    = md5Of(data).toHexString.toLower;
         sha512sum = sha512Of(data).toHexString.toLower;
@@ -99,7 +89,7 @@ struct Attack {
                           new InternetAddress("109.87.65.43", 21),
                           IpProto.TCP,
                           cast(ubyte[])"Some data",
-                          SysTime(DateTime(2000, 10, 13, 12, 0), GMT));
+                          SysTime(DateTime(2000, 10, 13, 12, 0), UTC));
 
         assert(atk.toFilenameFmt ==
          "from_port_21-tcp_%d_2000-10-13_md5_5b82f8bf4df2bfb0e66ccaa7306fd024");
@@ -147,7 +137,7 @@ struct Attack {
                           new InternetAddress("109.87.65.43", 21),
                           IpProto.TCP,
                           cast(ubyte[])"Some data",
-                          SysTime(DateTime(2000, 10, 13, 9, 0), GMT));
+                          SysTime(DateTime(2000, 10, 13, 9, 0), UTC));
 
         assert(atk.toLog ==
              "[ 2000-10-13 09:00:00:00000 GMT ] "
