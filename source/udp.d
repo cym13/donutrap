@@ -4,8 +4,8 @@ import utils;
 struct UdpHeader {
     align(1):
 
-    ushort src;
-    ushort dst;
+    ushort sport;
+    ushort dport;
     ushort len;
     ushort sum;
 
