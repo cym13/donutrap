@@ -89,7 +89,7 @@ struct Attack {
                           new InternetAddress("109.87.65.43", 21),
                           IpProto.TCP,
                           cast(ubyte[])"Some data",
-                          SysTime(DateTime(2000, 10, 13, 12, 0), UTC));
+                          SysTime(DateTime(2000, 10, 13, 12, 0), UTC()));
 
         assert(atk.toFilenameFmt ==
          "from_port_21-tcp_%d_2000-10-13_md5_5b82f8bf4df2bfb0e66ccaa7306fd024");
@@ -137,7 +137,7 @@ struct Attack {
                           new InternetAddress("109.87.65.43", 21),
                           IpProto.TCP,
                           cast(ubyte[])"Some data",
-                          SysTime(DateTime(2000, 10, 13, 9, 0), UTC));
+                          SysTime(DateTime(2000, 10, 13, 9, 0), UTC()));
 
         assert(atk.toLog ==
              "[ 2000-10-13 09:00:00:00000 GMT ] "
