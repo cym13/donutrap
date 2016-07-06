@@ -4,40 +4,48 @@ import std.concurrency: Mutex;
 
 import attack;
 
-struct Logger {
+class Logger {
+    static Mutex  atkMutex;
+    static Mutex  slfMutex;
     string logdir;
-    Mutex  atkMutex;
-    Mutex  slfMutex;
-    string attackFile;
+    string attackDir;
     string atkLogFile;
     string slfLogFile;
 
+    @disable this();
 
     this(string _logdir) {
-        import std.path: isDir, dirSeparator;
+        import std.path: isDir, chainPath;
+        import std.array;
 
         assert (_logdir.isDir);
 
-        logdir     = _logdir ~ dirSeparator;
-        attackFile = logdir ~ "attacks";
-        atkLogFile = logdir ~ "log" ~ dirSeparator ~ "attacker.log";
-        slfLogFile = logdir ~ "log" ~ dirSeparator ~ "donutrap.log";
-        atkMutex   = new Mutex();
-        slfMutex   = new Mutex();
+        logdir     = _logdir;
+        attackDir  = logdir.chainPath("attacks").array;
+        atkLogFile = logdir.chainPath("logs", "attacker.log").array;
+        slfLogFile = logdir.chainPath("logs", "donutrap.log").array;
+
+        if (!atkMutex) atkMutex = new Mutex();
+        if (!slfMutex) slfMutex = new Mutex();
     }
 
     void log(Attack atk) {
+        import std.array;
         import std.format;
         import std.algorithm;
+        import std.path: chainPath;
+
+        if (atk.data.length == 0)
+            return;
 
         string date = format("_%d-%d-%d_",
                              atk.time.year,
                              atk.time.month,
                              atk.time.day);
 
-        auto fileCount = attackFile.dirEntries(SpanMode.shallow)
-                                   .filter!((string f) => f.canFind(date))
-                                   .count;
+        auto fileCount = attackDir.dirEntries(SpanMode.shallow)
+                                  .filter!((string f) => f.canFind(date))
+                                  .count;
 
         auto filenameFmt = atk.toFilenameFmt;
         auto filename    = format(filenameFmt, fileCount);
@@ -48,8 +56,9 @@ struct Logger {
                 fileCount++;
             }
 
-            filename.write(atk.data);
+            std.file.write(attackDir.chainPath(filename).array, atk.data);
             atkLogFile.append(atk.toLog);
+            atkLogFile.append("\n");
         }
     }
 
