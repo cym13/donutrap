@@ -2,11 +2,13 @@
 import std.file;
 import std.concurrency: Mutex;
 
+import utils;
 import attack;
 
 class Logger {
-    static Mutex  atkMutex;
-    static Mutex  slfMutex;
+    static Mutex    atkMutex;
+    static Mutex    slfMutex;
+
     string logdir;
     string attackDir;
     string atkLogFile;
@@ -20,10 +22,10 @@ class Logger {
 
         assert (_logdir.isDir);
 
-        logdir     = _logdir;
-        attackDir  = logdir.chainPath("attacks").array;
-        atkLogFile = logdir.chainPath("logs", "attacker.log").array;
-        slfLogFile = logdir.chainPath("logs", "donutrap.log").array;
+        logdir      = _logdir;
+        attackDir   = logdir.chainPath("attacks").array;
+        atkLogFile  = logdir.chainPath("logs", "attacker.log").array;
+        slfLogFile  = logdir.chainPath("logs", "donutrap.log").array;
 
         if (!atkMutex) atkMutex = new Mutex();
         if (!slfMutex) slfMutex = new Mutex();
@@ -34,6 +36,8 @@ class Logger {
         import std.format;
         import std.algorithm;
         import std.path: chainPath;
+
+        debug import std.stdio;
 
         if (atk.data.length == 0)
             return;
@@ -69,3 +73,4 @@ class Logger {
         }
     }
 }
+

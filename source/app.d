@@ -20,72 +20,9 @@ import attack;
 import logger;
 
 Logger   loggr;
-string[] localhostIps;
-
-auto hostIps() {
-    import std.array;
-    import std.string;
-    import std.file: readText;
-    import std.algorithm: map;
-
-    return "/proc/net/dev".readText
-                          .splitLines[2 .. $]
-                          .map!(l => l.split(":")[0])
-                          .map!(l => l.replace(" ", ""))
-                          .map!(i => interfaceIp(i))
-                          .array;
-}
-
-string interfaceIp(string iface) {
-    auto s  = new Socket(AddressFamily.INET, SocketType.DGRAM);
-    auto fd = s.handle;
-    scope(exit) close(fd);
-
-    ifreq ifr;
-    ifr.ifr_addr.sa_family = AddressFamily.INET;
-    auto name = iface.toStringz.to!(char[]);
-    ifr.ifr_name[0 .. name.length] = iface.toStringz.to!(char[]);
-
-    ioctl(fd, SIOCGIFADDR, &ifr);
-
-    return inet_ntoa((cast(sockaddr_in *)&ifr.ifr_addr).sin_addr)
-            .fromStringz
-            .to!string;
-}
-
-extern (C) {
-    alias ulong in_addr;
-    alias int   ifmap;
-
-    int   ioctl(int fd, ulong request, ...);
-    char* inet_ntoa(in_addr);
-    int   close(int);
-
-    struct sockaddr_in {
-        short   sin_family;
-        ushort  sin_port;
-        in_addr sin_addr;
-        char[8] sin_zero;
-    }
-
-    immutable IFNAMSIZ    = 16;
-    immutable SIOCGIFADDR = 0x8915;
-
-    struct ifreq {
-        char[IFNAMSIZ] ifr_name;
-        sockaddr       ifr_addr;
-    }
-
-    struct sockaddr {
-        ushort   sa_family;
-        byte[14] sa_data;
-    }
-}
 
 extern (C)
 void packetHandler(ubyte* args, const pcap_pkthdr* header, const ubyte* pkt) {
-    import std.algorithm: canFind;
-
     if (header.caplen < EtherHeader.sizeof)
         return;
 
@@ -94,17 +31,8 @@ void packetHandler(ubyte* args, const pcap_pkthdr* header, const ubyte* pkt) {
     if (ethPkt.type != EtherType.IPV4)
         return;
 
-
     auto packet = pkt[EtherHeader.sizeof .. header.caplen].dup;
     auto iph    = packet.getHeader!Ipv4Header;
-
-    auto ipdst = (new InternetAddress(iph.dst, 0)).toAddrString;
-    if (localhostIps.canFind(ipdst))
-        return;
-
-    auto ipsrc = (new InternetAddress(iph.src, 0)).toAddrString;
-    if (!localhostIps.canFind(ipsrc))
-        return;
 
     IpProto protocol;
     ubyte[] data;
@@ -135,6 +63,10 @@ void packetHandler(ubyte* args, const pcap_pkthdr* header, const ubyte* pkt) {
 void main(string[] args)
 {
     import std.getopt;
+    import std.file;
+    import std.format;
+    import std.string: chomp, join;
+    import std.algorithm: map;
 
     char* errbuf = cast(char*)(malloc(256 * char.sizeof));
     scope(exit) free(errbuf);
@@ -154,7 +86,6 @@ void main(string[] args)
     writeln("Device: ", dev);
 
     loggr        = new Logger("/opt/donutrap");
-    localhostIps = hostIps();
 
     pcap_t* handle = pcap_open_live(dev.toStringz, BUFSIZ, 1, 0, errbuf);
     assert(handle != null);
@@ -162,12 +93,16 @@ void main(string[] args)
 
     uint net;
     bpf_program filter;
-    string filter_app;
+
+    string localhost  = "/etc/hostname".readText.chomp;
+    string pcapFilter = "(dst localhost or dst "~ localhost ~")";
 
     if (port != "")
-        filter_app = "port " ~ port;
+        pcapFilter ~= " and port " ~ port;
 
-    pcap_compile(handle, &filter, filter_app.toStringz, 0, net);
+    debug pcapFilter.writeln;
+
+    pcap_compile(handle, &filter, pcapFilter.toStringz, 0, net);
     pcap_setfilter(handle, &filter);
     auto err = pcap_loop(handle, 0, &packetHandler, cast(ubyte*)null);
     writeln("An error occured: ", err);

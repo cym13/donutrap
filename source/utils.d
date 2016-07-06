@@ -27,7 +27,6 @@ mixin template autoToString() {
 
         res ~= tmp.join(", ") ~ ")";
 
-
         return res;
     }
 }
@@ -59,4 +58,3 @@ unittest {
     assert(data.consume!S == S(0x10203040, 'P'));
     assert(data == [0x60, 0x70]);
 }
-
